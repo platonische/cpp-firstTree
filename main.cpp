@@ -11,6 +11,7 @@ struct node_t
     node_t* Right;
     int value;
     int NumOrder;
+    int level;
 };
 
 struct Queue_t
@@ -19,6 +20,15 @@ struct Queue_t
    Queue_t *Next;
 };
 
+// Оцередь очередей
+struct Qoq
+{
+   Queue_t *Value;
+   Qoq *Next;
+};
+
+
+
 int recursion1(node_t*);
 int recursion2(node_t*);
 int recursion3(node_t*);
@@ -26,12 +36,19 @@ bool recursion4(node_t*, bool);
 int recursion5(node_t*);
 int recursion6(node_t*, int);
 int recursion7(Queue_t*);
-int recursion8(node_t*);
-int recursion9(node_t*);
-int recursion10(node_t*);
-int recursion11(node_t*);
+int recursion8(node_t*, int, int);
+Queue_t* recursion9(node_t*, Queue_t*, int);
+int recursion10(node_t*, Queue_t*, Qoq*);
+node_t* recursion11(node_t*, node_t*);
 bool isOdd(int);
-
+bool isLeaf(node_t*);
+Queue_t* updateQueueForGettingLowLeaves(Queue_t*, node_t*);
+void printQueue(Queue_t*);
+void printQoq(Qoq*);
+node_t* setSwapNodes(node_t*, node_t*, node_t*);
+Queue_t* setPath(node_t*, Queue_t*, Qoq*);
+Queue_t* addToQoq(Qoq*, Queue_t*);
+Queue_t* addToQueue(Queue_t*, node_t*);
 
 //----------------------------------------------------
 // Нахождение ширины дерева
@@ -87,11 +104,17 @@ int Get_Height(node_t* root)
 //                        flag = 2  - номер вершины в пути с четными вершинами
 
 //-------------------------------------------------------
-void FullArray(int **Array_PRN,const node_t* root,int Left_Border,int Right_Border,int Cur_Height, int flag)
-{
+void FullArray(
+        int **Array_PRN,
+        const node_t* root,
+        int Left_Border,
+        int Right_Border,
+        int Cur_Height,
+        int flag
+) {
    int i;
    int Medium = (Right_Border+Left_Border)/2;
-   if (root->Left!= NULL)
+   if (root->Left != NULL)
    {
       for( i = (Left_Border+Medium)/2 ; i < Medium ; i++ )
       {
@@ -101,7 +124,7 @@ void FullArray(int **Array_PRN,const node_t* root,int Left_Border,int Right_Bord
 
       FullArray(Array_PRN,root->Left, Left_Border, Medium, Cur_Height+1, flag);
    }
-   if (root->Right!= NULL)
+   if (root->Right != NULL)
    {
       for( i = Medium ; i < (Right_Border+Medium)/2 ; i++ )
       {
@@ -137,21 +160,21 @@ void PrintTree(node_t* root, int flag)
 
    for( i = 0; i < tree_Height ;i++ )
    {
-      Array_PRN[i] = new int[tree_Widht*4];
+      Array_PRN[i] = new int[tree_Widht*6];
    }
    for(i = 0; i < tree_Height ;i++)
    {
-      for(j = 0; j < tree_Widht*4 ;j++)
+      for(j = 0; j < tree_Widht*6 ;j++)
       {
          Array_PRN[i][j] = 0;
       }
    }
-   FullArray(Array_PRN,root,0,tree_Widht*4,0,flag);
+   FullArray(Array_PRN,root,0,tree_Widht*6,0,flag);
    printf("\n");
    for(i = 0; i < tree_Height ;i++)
    {
       printf("\n");
-      for(j = 0; j < tree_Widht*4 ;j++)
+      for(j = 0; j < tree_Widht*6 ;j++)
       {
          if (Array_PRN[i][j] > 0)
          {
@@ -188,14 +211,14 @@ int main()
    int HeightL;
    int LMax;
 
-    node_t n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12, n13, n14,n15;
-    n1.Left = &n2; n1.Right = &n9; n1.value = 1;
+    node_t n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12, n13, n14,n15, n16,n17,n18,n19, n20;
+    n1.Left = &n2; n1.Right = &n9; n1.value = 4;
     n2.Left = &n3; n2.Right = &n6; n2.value = 2;
     n3.Left = &n4; n3.Right = &n5; n3.value = 37;
     n4.Left = NULL; n4.Right = NULL; n4.value = 4;
     n5.Left = NULL; n5.Right = &n15; n5.value = 52;
-    n6.Left = &n7; n6.Right = &n8; n6.value = 6;
-    n7.Left = NULL; n7.Right = NULL; n7.value = 7;
+    n6.Left = &n7; n6.Right = &n8; n6.value = 61;
+    n7.Left = &n16; n7.Right = NULL; n7.value = 72;
     n8.Left = NULL; n8.Right = NULL; n8.value = 81;
     n9.Left = &n10; n9.Right = &n13; n9.value = 9;
     n10.Left = &n11; n10.Right = &n12; n10.value = 10;
@@ -205,21 +228,46 @@ int main()
     n14.Left = NULL; n14.Right = NULL; n14.value = 14;
     n15.Left = NULL; n15.Right = NULL; n15.value = 15;
 
+    n16.Left = NULL; n16.Right = &n17; n16.value = 12;
+    n17.Left = &n18; n17.Right = &n19; n17.value = 32;
+    n18.Left = NULL; n18.Right = NULL; n18.value = 34;
+    n19.Left = &n20; n19.Right = NULL; n19.value = 36;
+    n20.Left = NULL; n20.Right = NULL; n20.value = 35;
+
+
    PrintTree(&n1,1);
    printf("\n");
    //getchar();
 
-   recursion1(&n1);
+//   recursion1(&n1);
 //   recursion2(&n1);
 //   recursion3(&n1);
    cout << endl;
-   //recursion4(&n1,true);
+
+   //   recursion4(&n1,true);
    //recursion5(&n1);
    //recursion6(&n1, Get_Height(&n1));
-   Queue_t* queue = new Queue_t;
-   queue->Value = &n1;
-   queue->Next = NULL;
-   recursion7(queue);
+
+//   Queue_t* queue = new Queue_t;
+//   queue->Value = &n1;
+//   queue->Next = NULL;
+//   recursion7(queue);
+
+   //recursion8(&n1,1, Get_Height(&n1));
+
+//   Queue_t* queue = new Queue_t;
+//   queue->Value = &n1;
+//   printQueue( recursion9(&n1, queue, 1) );
+
+   //recursion11(NULL, &n1);
+   //PrintTree(recursion11(NULL, &n1),1);
+//   printf("\n");
+
+   Qoq* qoq = new Qoq();
+   recursion10(&n1, NULL, qoq);
+   printQoq(qoq);
+
+
    cout << endl;
 
    return 0;
@@ -263,6 +311,7 @@ bool recursion4(node_t* root, bool flag)
 
     if (root->Left) flag = recursion4(root->Left, flag);
     if (root->Right) flag = recursion4(root->Right, flag);
+
     return flag;
 }
 
@@ -335,7 +384,192 @@ int recursion7(Queue_t* queueIn)
     return 0;
 }
 
+//Самые нижние листья
+int recursion8(node_t* root, int level, int height)
+{
+    if (level == height) {
+        cout << root->value << ", ";
+    }
+    level++;
+
+    if (root->Left) recursion8(root->Left, level, height);
+    if (root->Right) recursion8(root->Right, level, height);
+    return 0;
+}
+
+//Самые верхние листья
+Queue_t* recursion9(node_t* root, Queue_t* queue, int level)
+{
+
+    if (isLeaf(root)) {
+        root->level = level;
+        queue = updateQueueForGettingLowLeaves(queue, root);
+    }
+
+    level++;
+    if (root->Left) queue = recursion9(root->Left, queue, level);
+    if (root->Right) queue = recursion9(root->Right, queue, level);
+
+
+
+    return queue;
+}
+
+//Самые длинные пути с четными вершинами
+int recursion10(node_t* node, Queue_t* queue, Qoq* qoq)
+{
+    if (!isOdd(node->value)){
+        queue = setPath(node, queue, qoq);
+        //node надо поставить вперед в queue, это будет новая голова
+        //и записать ее в qoq как новую очередь
+    } else {
+        queue = NULL;
+    }
+
+    // queue здесь уже соответсвует текущей node
+
+
+    if (node->Left) recursion10(node->Left, queue, qoq);
+    if (node->Right) recursion10(node->Right, queue, qoq);
+
+    return 0;
+}
+
+//Поменять нечетного родителя с четным ребенком
+node_t* recursion11(node_t* nodeParent, node_t* node)
+{
+    if (isOdd(node->value)){
+
+        if (node->Left && !isOdd(node->Left->value))
+            node = setSwapNodes(nodeParent, node, node->Left);
+
+        if (node->Right && !isOdd(node->Right->value))
+            node = setSwapNodes(nodeParent, node, node->Right);
+
+    }
+
+    if (node->Left) recursion11(node, node->Left);
+    if (node->Right) recursion11(node, node->Right);
+
+    return node;
+}
+
 bool isOdd(int value)
 {
-    return !bool(value%2);
+    return bool(value%2);
 }
+
+bool isLeaf(node_t* node)
+{
+    return !(node->Left || node->Right);
+}
+
+Queue_t* updateQueueForGettingLowLeaves(Queue_t* queue, node_t* node)
+{
+    if (queue->Value->level == node->level) {
+        //Добавить в конец
+        Queue_t *current = queue;
+        while (current->Next) {
+            current = current->Next;
+        }
+        current->Next = new Queue_t();
+        current = current->Next;
+        current->Value = node;
+
+    }
+
+    if (!queue->Value->level || queue->Value->level > node->level) {
+        // Заменяем очередь на новую
+        queue = new Queue_t;
+        queue->Value = node;
+    }
+
+    return queue;
+}
+
+void printQueue(Queue_t* queue)
+{
+    while(queue) {
+        cout << queue->Value->value << ", ";
+        queue = queue->Next;
+    }
+    cout << endl;
+}
+
+void printQoq(Qoq* qoq)
+{
+    while (qoq){
+        printQueue(qoq->Value);
+        qoq = qoq->Next;
+    }
+}
+
+node_t* setSwapNodes(node_t* nodeGarndParent, node_t* nodeParent, node_t* nodeChild)
+{
+    if (nodeGarndParent && nodeGarndParent->Left == nodeParent) nodeGarndParent->Left = nodeChild;
+    if (nodeGarndParent && nodeGarndParent->Right == nodeParent) nodeGarndParent->Right = nodeChild;
+
+    node_t *tmpL = nodeParent->Left;
+    node_t *tmpR = nodeParent->Right;
+
+    nodeParent->Left = nodeChild->Left;
+    nodeParent->Right = nodeChild->Right;
+
+    if (tmpL == nodeChild) {
+        nodeChild->Left = nodeParent;
+    }
+    else {
+        nodeChild->Left = tmpL;
+    }
+
+    if (tmpR == nodeChild) {
+        nodeChild->Right = nodeParent;
+    }
+    else {
+        nodeChild->Right = tmpR;
+    }
+
+    return nodeChild;
+}
+
+Queue_t* setPath(node_t* node, Queue_t* queue, Qoq* qoq)
+{
+
+    if (!queue) {
+        queue = addToQoq(qoq, NULL);
+    }
+
+    queue = addToQueue(queue, node);
+    addToQoq(qoq, queue);
+
+    return queue;
+}
+
+Queue_t* addToQoq(Qoq* qoq, Queue_t* queue)
+{
+    while(qoq->Next) {
+        qoq = qoq->Next;
+    }
+
+    qoq->Next = new Qoq();
+    qoq = qoq->Next;
+    if (queue == NULL) {
+        queue = new Queue_t();
+    }
+    qoq->Value = queue;
+
+    return queue;
+}
+
+Queue_t* addToQueue(Queue_t* queue, node_t* node)
+{
+    Queue_t* newHead = new Queue_t();
+    newHead->Value = node;
+
+    if (queue) {
+        newHead->Next = queue;
+    }
+
+    return newHead;
+}
+
