@@ -1,4 +1,6 @@
 #include <iostream>
+#include "src/exted/Any/QueueAnyValue.h"
+
 
 using namespace std;
 
@@ -38,15 +40,15 @@ int recursion6(node_t*, int);
 int recursion7(Queue_t*);
 int recursion8(node_t*, int, int);
 Queue_t* recursion9(node_t*, Queue_t*, int);
-int recursion10(node_t*, Queue_t*, Qoq*);
+int recursion10(node_t*, QueueAnyValue<node_t*>*, QueueAnyValue<QueueAnyValue<node_t*>*>*);
 node_t* recursion11(node_t*, node_t*);
 bool isOdd(int);
 bool isLeaf(node_t*);
 Queue_t* updateQueueForGettingLowLeaves(Queue_t*, node_t*);
 void printQueue(Queue_t*);
-void printQoq(Qoq*);
+void printQoq(QueueAnyValue<QueueAnyValue<node_t*>*>*);
 node_t* setSwapNodes(node_t*, node_t*, node_t*);
-Queue_t* setPath(node_t*, Queue_t*, Qoq*);
+QueueAnyValue<node_t*>* setPath(node_t*, QueueAnyValue<node_t*>*, QueueAnyValue<QueueAnyValue<node_t*>*>*);
 Queue_t* addToQoq(Qoq*, Queue_t*);
 Queue_t* addToQueue(Queue_t*, node_t*);
 
@@ -229,10 +231,11 @@ int main()
     n15.Left = NULL; n15.Right = NULL; n15.value = 15;
 
     n16.Left = NULL; n16.Right = &n17; n16.value = 12;
-    n17.Left = &n18; n17.Right = &n19; n17.value = 32;
-    n18.Left = NULL; n18.Right = NULL; n18.value = 34;
-    n19.Left = &n20; n19.Right = NULL; n19.value = 36;
-    n20.Left = NULL; n20.Right = NULL; n20.value = 35;
+    n17.Left = NULL; n17.Right = NULL; n17.value = 32;
+//    n17.Left = &n18; n17.Right = &n19; n17.value = 32;
+//    n18.Left = NULL; n18.Right = NULL; n18.value = 34;
+//    n19.Left = &n20; n19.Right = NULL; n19.value = 36;
+//    n20.Left = NULL; n20.Right = NULL; n20.value = 35;
 
 
    PrintTree(&n1,1);
@@ -263,7 +266,12 @@ int main()
    //PrintTree(recursion11(NULL, &n1),1);
 //   printf("\n");
 
-   Qoq* qoq = new Qoq();
+
+
+
+   QueueAnyValue<QueueAnyValue<node_t*>*>* qoq = new QueueAnyValue<QueueAnyValue<node_t*>*>();
+
+   //Qoq* qoq = new Qoq();
    recursion10(&n1, NULL, qoq);
    printQoq(qoq);
 
@@ -416,12 +424,18 @@ Queue_t* recursion9(node_t* root, Queue_t* queue, int level)
 }
 
 //Самые длинные пути с четными вершинами
-int recursion10(node_t* node, Queue_t* queue, Qoq* qoq)
+int recursion10(
+        node_t* node,
+        QueueAnyValue<node_t*>* queue,
+        QueueAnyValue<QueueAnyValue<node_t*>*>* qoq
+        )
 {
     if (!isOdd(node->value)){
         queue = setPath(node, queue, qoq);
         //node надо поставить вперед в queue, это будет новая голова
         //и записать ее в qoq как новую очередь
+        //Для каждого поапания будет создана своя очередь.
+        //следующий элемент это попадание в обратном порядке
     } else {
         queue = NULL;
     }
@@ -434,6 +448,55 @@ int recursion10(node_t* node, Queue_t* queue, Qoq* qoq)
 
     return 0;
 }
+
+QueueAnyValue<node_t*>* setPath(node_t* node,
+                 QueueAnyValue<node_t*>* queue,
+                 QueueAnyValue<QueueAnyValue<node_t*>*>* qoq)
+{
+    if(queue == NULL) {
+        queue = new QueueAnyValue<node_t*>();
+    }
+
+    // Добавили ноду в первую позицию
+    // хоть в пустую очередь, хоть в полную
+    queue->addElement(queue->createElement(node), NULL);
+
+    // Добавили очередь в очередь очередей
+    // Причем каждое попадание это новая итерация
+    // Таким образом длинный отрезок из попаданий 2-4-14
+    // Будет храниться как 3 отдельных очереди 14, 4-14, 2-4-14
+    qoq->addElement(qoq->createElement(queue), NULL);
+    return queue;
+}
+
+//Queue_t* addToQoq(Qoq* qoq, Queue_t* queue)
+//{
+//    while(qoq->Next) {
+//        qoq = qoq->Next;
+//    }
+
+//    qoq->Next = new Qoq();
+//    qoq = qoq->Next;
+//    if (queue == NULL) {
+//        queue = new Queue_t();
+//    }
+//    qoq->Value = queue;
+
+//    return queue;
+//}
+
+//Queue_t* addToQueue(Queue_t* queue, node_t* node)
+//{
+//    Queue_t* newHead = new Queue_t();
+//    newHead->Value = node;
+
+//    if (queue) {
+//        newHead->Next = queue;
+//    }
+
+//    return newHead;
+//}
+
 
 //Поменять нечетного родителя с четным ребенком
 node_t* recursion11(node_t* nodeParent, node_t* node)
@@ -496,11 +559,23 @@ void printQueue(Queue_t* queue)
     cout << endl;
 }
 
-void printQoq(Qoq* qoq)
+void printQoq(QueueAnyValue<QueueAnyValue<node_t*>*>* qoq)
 {
-    while (qoq){
-        printQueue(qoq->Value);
-        qoq = qoq->Next;
+    cout << "Печать длинных четных отрезков"<<"\n";
+
+    qoq->setStep(qoq->getHead());
+    while (qoq->getStep()){
+        QueueAnyValue<node_t*>* curQ = qoq->getValue(qoq->getStep());
+
+        curQ->setStep(curQ->getHead());
+        while (curQ->getStep()){
+            node_t* curN = curQ->getValue(curQ->getStep());
+            cout << curN->value << "-";
+            curQ->setStepNext();
+        }
+        cout << "\n";
+
+        qoq->setStepNext();
     }
 }
 
@@ -532,44 +607,5 @@ node_t* setSwapNodes(node_t* nodeGarndParent, node_t* nodeParent, node_t* nodeCh
     return nodeChild;
 }
 
-Queue_t* setPath(node_t* node, Queue_t* queue, Qoq* qoq)
-{
 
-    if (!queue) {
-        queue = addToQoq(qoq, NULL);
-    }
-
-    queue = addToQueue(queue, node);
-    addToQoq(qoq, queue);
-
-    return queue;
-}
-
-Queue_t* addToQoq(Qoq* qoq, Queue_t* queue)
-{
-    while(qoq->Next) {
-        qoq = qoq->Next;
-    }
-
-    qoq->Next = new Qoq();
-    qoq = qoq->Next;
-    if (queue == NULL) {
-        queue = new Queue_t();
-    }
-    qoq->Value = queue;
-
-    return queue;
-}
-
-Queue_t* addToQueue(Queue_t* queue, node_t* node)
-{
-    Queue_t* newHead = new Queue_t();
-    newHead->Value = node;
-
-    if (queue) {
-        newHead->Next = queue;
-    }
-
-    return newHead;
-}
 

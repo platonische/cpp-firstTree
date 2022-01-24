@@ -21,3 +21,8 @@ SOURCES += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+HEADERS += \
+    src/AbstractQueue.h \
+    src/exted/Any/QueueAnyValue.h \
+    src/exted/Int/QueueIntValue.h
